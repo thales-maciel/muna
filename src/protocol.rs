@@ -1,4 +1,4 @@
-use crate::request::Request;
+use crate::{request::Request, operations::ReturnValue};
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum RespValueRef {
@@ -9,6 +9,17 @@ pub enum RespValueRef {
     Array(Vec<RespValueRef>),
     NullArray,
     NullBulkString,
+}
+
+impl From<ReturnValue> for RespValueRef {
+    fn from(state_res: ReturnValue) -> Self {
+        match state_res {
+            ReturnValue::Ok => RespValueRef::String("OK".to_string()),
+            ReturnValue::Nil => RespValueRef::NullBulkString,
+            ReturnValue::StringRes(s) => RespValueRef::BulkString(s),
+            ReturnValue::Error(e) => RespValueRef::Failure(e),
+        }
+    }
 }
 
 impl TryInto<Request> for RespValueRef {
@@ -22,7 +33,7 @@ impl TryInto<Request> for RespValueRef {
                     command_chunks.push(s);
                     continue;
                 }
-                return Err(())
+                return Err(());
             }
             return Ok(Request::new(command_chunks));
         }
@@ -188,42 +199,44 @@ pub fn decode(buf: &mut [u8]) -> Result<Option<RespValueRef>, RESPError> {
     }
 }
 
-pub fn write_resp_value(item: RespValueRef) -> String {
-    let mut return_value = String::new();
-    match item {
-        RespValueRef::Failure(e) => {
-            return_value.push_str("-");
-            return_value.push_str(&e);
-            return_value.push_str("\r\n");
-        }
-        RespValueRef::String(s) => {
-            return_value.push_str("+");
-            return_value.push_str(&s);
-            return_value.push_str("\r\n");
-        }
-        RespValueRef::BulkString(s) => {
-            return_value.push_str("$");
-            return_value.push_str(s.len().to_string().as_str());
-            return_value.push_str("\r\n");
-            return_value.push_str(&s);
-            return_value.push_str("\r\n");
-        }
-        RespValueRef::Array(array) => {
-            return_value.push_str("*");
-            return_value.push_str(array.len().to_string().as_str());
-            return_value.push_str("\r\n");
-            for redis_value in array {
-                write_resp_value(redis_value);
+impl RespValueRef {
+    pub fn write_resp_value(&self) -> String {
+        let mut return_value = String::new();
+        match &self {
+            RespValueRef::Failure(e) => {
+                return_value.push_str("-");
+                return_value.push_str(&e);
+                return_value.push_str("\r\n");
             }
+            RespValueRef::String(s) => {
+                return_value.push_str("+");
+                return_value.push_str(&s);
+                return_value.push_str("\r\n");
+            }
+            RespValueRef::BulkString(s) => {
+                return_value.push_str("$");
+                return_value.push_str(s.len().to_string().as_str());
+                return_value.push_str("\r\n");
+                return_value.push_str(&s);
+                return_value.push_str("\r\n");
+            }
+            RespValueRef::Array(array) => {
+                return_value.push_str("*");
+                return_value.push_str(array.len().to_string().as_str());
+                return_value.push_str("\r\n");
+                for redis_value in array {
+                    redis_value.write_resp_value();
+                }
+            }
+            RespValueRef::Int(i) => {
+                return_value.push_str(":");
+                return_value.push_str(i.to_string().as_str());
+                return_value.push_str("\r\n");
+            }
+            RespValueRef::NullArray => return_value.push_str("*-1\r\n"),
+            RespValueRef::NullBulkString => return_value.push_str("$-1\r\n"),
         }
-        RespValueRef::Int(i) => {
-            return_value.push_str(":");
-            return_value.push_str(i.to_string().as_str());
-            return_value.push_str("\r\n");
-        },
-        RespValueRef::NullArray => return_value.push_str("*-1\r\n"),
-        RespValueRef::NullBulkString => return_value.push_str("$-1\r\n")
-    }
 
-    return_value
+        return_value
+    }
 }

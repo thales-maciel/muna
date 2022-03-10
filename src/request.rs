@@ -7,8 +7,8 @@ impl Request {
         Self { query }
     }
 
-    pub fn command(&self) -> String {
-        self.query[0].to_string()
+    pub fn command(&self) -> &str {
+        self.query[0].as_str()
     }
 
     pub fn arity(&self) -> i64 {
