@@ -2,27 +2,27 @@ use std::collections::HashMap;
 
 use crate::{repository::Repository, record::{Record, Types}, request::Request};
 
-use super::ReturnValue;
+use super::OperationResult;
 
-pub fn hget(repo: &mut dyn Repository, req: &Request) -> ReturnValue {
+pub fn hget(repo: &mut dyn Repository, req: &Request) -> OperationResult {
     let key = &req.arguments()[0];
     let hash_key = &req.arguments()[1];
     if let Ok(record) = repo.get(key.to_string()) {
         match record.value {
             Types::HashMap(hash) => match hash.get(hash_key) {
-                Some(s) => ReturnValue::StringRes(s.to_string()),
-                None => ReturnValue::Nil,
+                Some(s) => OperationResult::StringRes(s.to_string()),
+                None => OperationResult::Nil,
             },
-            _ => ReturnValue::Error("wrongtype".to_string()),
+            _ => OperationResult::Error("wrongtype".to_string()),
         }
     } else {
-        ReturnValue::Nil
+        OperationResult::Nil
     }
 }
 
-pub fn hset(repo: &mut dyn Repository, req: &Request) -> ReturnValue {
+pub fn hset(repo: &mut dyn Repository, req: &Request) -> OperationResult {
     if req.arity() % 2 != 0 {
-        return ReturnValue::Error("wrong number of arguments".to_string());
+        return OperationResult::Error("wrong number of arguments".to_string());
     };
     let key = &req.arguments()[0];
     let pairs = &req.arguments()[1..];
@@ -33,9 +33,9 @@ pub fn hset(repo: &mut dyn Repository, req: &Request) -> ReturnValue {
                     hash.insert(pair[0].to_string(), pair[0].to_string());
                 }
                 repo.set(key.to_string(), record.clone());
-                return ReturnValue::Nil;
+                return OperationResult::Nil;
             }
-            _ => return ReturnValue::Error("WrongType".to_string()), // essa linha não deve retornar wrongtype, ela deve apenas setar um novo hash no repo com os valores informados
+            _ => return OperationResult::Error("WrongType".to_string()), // essa linha não deve retornar wrongtype, ela deve apenas setar um novo hash no repo com os valores informados
         }
     } else {
         let mut new_set = HashMap::new();
@@ -48,6 +48,6 @@ pub fn hset(repo: &mut dyn Repository, req: &Request) -> ReturnValue {
                 value: Types::HashMap(new_set),
             },
         );
-        return ReturnValue::Nil;
+        return OperationResult::Nil;
     }
 }

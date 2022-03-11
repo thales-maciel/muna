@@ -43,7 +43,7 @@ impl Repository for MemoryRepository {
     }
 
     fn clear(&mut self) -> Result<(), String> {
-        self.store = HashMap::<String, Record>::new();
+        self.store.clear();
         Ok(())
     }
 }

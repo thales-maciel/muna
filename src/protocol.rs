@@ -1,4 +1,6 @@
-use crate::{request::Request, operations::ReturnValue};
+use thiserror::Error;
+
+use crate::{request::Request, operations::OperationResult};
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum RespValueRef {
@@ -11,13 +13,13 @@ pub enum RespValueRef {
     NullBulkString,
 }
 
-impl From<ReturnValue> for RespValueRef {
-    fn from(state_res: ReturnValue) -> Self {
+impl From<OperationResult> for RespValueRef {
+    fn from(state_res: OperationResult) -> Self {
         match state_res {
-            ReturnValue::Ok => RespValueRef::String("OK".to_string()),
-            ReturnValue::Nil => RespValueRef::NullBulkString,
-            ReturnValue::StringRes(s) => RespValueRef::BulkString(s),
-            ReturnValue::Error(e) => RespValueRef::Failure(e),
+            OperationResult::Ok => RespValueRef::String("OK".to_string()),
+            OperationResult::Nil => RespValueRef::NullBulkString,
+            OperationResult::StringRes(s) => RespValueRef::BulkString(s),
+            OperationResult::Error(e) => RespValueRef::Failure(e),
         }
     }
 }
@@ -41,11 +43,15 @@ impl TryInto<Request> for RespValueRef {
     }
 }
 
-#[derive(Debug)]
+#[derive(Error, Debug)]
 pub enum RESPError {
+    #[error("Unknown Starting Byte")]
     UnknownStartingByte,
+    #[error("Unparseable Int")]
     IntParseFailure,
+    #[error("Bad Bulkstring size `{0}`")]
     BadBulkStringSize(i64),
+    #[error("Bad Array size `{0}`")]
     BadArraySize(i64),
 }
 

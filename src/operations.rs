@@ -8,10 +8,10 @@ use self::{
     string::{get, set},
 };
 
-type OperationHandler = fn(repo: &mut dyn Repository, request: &Request) -> ReturnValue;
+type OperationHandler = fn(repo: &mut dyn Repository, request: &Request) -> OperationResult;
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum ReturnValue {
+pub enum OperationResult {
     Ok,
     StringRes(String),
     Error(String),
@@ -25,16 +25,16 @@ pub struct Operation {
 }
 
 impl Operation {
-    pub fn execute(&self, repo: &mut dyn Repository, request: &Request) -> ReturnValue {
+    pub fn execute(&self, repo: &mut dyn Repository, request: &Request) -> OperationResult {
         if !is_valid_arity(self.arity.into(), request.arity()) {
-            return ReturnValue::Error("Wrong number of arguments".to_string());
+            return OperationResult::Error("Wrong number of arguments".to_string());
         }
         (self.handler)(repo, request)
     }
 }
 
-pub fn commands_handler(_: &mut dyn Repository, _: &Request) -> ReturnValue {
-    ReturnValue::Ok
+pub fn commands_handler(_: &mut dyn Repository, _: &Request) -> OperationResult {
+    OperationResult::Ok
 }
 
 fn is_valid_arity(op_arity: i64, req_arity: i64) -> bool {

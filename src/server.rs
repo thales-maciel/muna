@@ -3,38 +3,25 @@ use std::{
     net::{Shutdown, TcpStream},
 };
 
+use thiserror::Error;
+
 use crate::{
-    operations::{lookup, ReturnValue},
+    operations::{lookup, OperationResult},
     protocol::{decode, RESPError, RespValueRef},
     repository::{MemoryRepository, Repository},
     request::Request,
 };
 
-#[derive(Debug)]
-enum Response {
-    ProtocolError(RESPError),
+#[derive(Error, Debug)]
+pub enum ResponseError {
+    #[error("Failed to parse request")]
+    ProtocolError(#[from] RESPError),
+    #[error("Empty message")]
     EmptyMessageError,
+    #[error("Malformed Request")]
     BadRequestError,
+    #[error("Not implemented")]
     NotImplementedError,
-    OperationResult(ReturnValue),
-}
-
-impl From<Response> for RespValueRef {
-    fn from(response: Response) -> Self {
-        match response {
-            Response::ProtocolError(_) => Self::Failure("Protocol error".to_string()),
-            Response::EmptyMessageError => Self::Failure("Empty message".to_string()),
-            Response::BadRequestError => Self::Failure("Malformed request".to_string()),
-            Response::NotImplementedError => Self::Failure("Not implemented".to_string()),
-            Response::OperationResult(r) => r.into(),
-        }
-    }
-}
-
-impl Response {
-    fn encode(self) -> String {
-        RespValueRef::from(self).write_resp_value()
-    }
 }
 
 pub fn handle_connection(mut stream: TcpStream) -> () {
@@ -43,8 +30,13 @@ pub fn handle_connection(mut stream: TcpStream) -> () {
 
     while match stream.read(&mut buffer) {
         Ok(_) => {
-            let res = handle_request(&mut buffer, &mut repo);
-            stream.write(res.encode().as_bytes()).unwrap();
+            let result = handle_request(&mut buffer, &mut repo);
+            let res = match result {
+                Ok(v) => v.into(),
+                Err(e) => RespValueRef::Failure(e.to_string()),
+            };
+
+            stream.write(res.write_resp_value().as_bytes()).unwrap();
             stream.flush().unwrap();
             true
         }
@@ -59,29 +51,25 @@ pub fn handle_connection(mut stream: TcpStream) -> () {
     } {}
 }
 
-fn handle_request(buffer: &mut [u8], repo: &mut dyn Repository) -> Response {
+fn handle_request(buffer: &mut [u8], repo: &mut dyn Repository) -> Result<OperationResult, ResponseError> {
     let raw_message = String::from_utf8_lossy(&buffer[..]);
     println!("Message received:\r\n{}", raw_message);
 
-    let decoded_message = decode(&mut buffer[..]);
-    if let Err(e) = decoded_message {
-        return Response::ProtocolError(e);
-    }
+    let decoded_message = decode(&mut buffer[..])?;
 
-    let Some(parsed_message) = decoded_message.unwrap() else {
-        return Response::EmptyMessageError
+    let Some(parsed_message) = decoded_message else {
+        return Err(ResponseError::EmptyMessageError)
     };
 
     let message_to_request_result: Result<Request, _> = parsed_message.try_into();
     if let Err(_) = message_to_request_result {
-        return Response::BadRequestError;
+        return Err(ResponseError::BadRequestError);
     }
     let request = message_to_request_result.unwrap();
 
     let Some(operation) = lookup(&request.command()) else {
-        return Response::NotImplementedError
+        return Err(ResponseError::NotImplementedError)
     };
 
-    let result = operation.execute(repo, &request);
-    Response::OperationResult(result)
+    Ok(operation.execute(repo, &request))
 }
