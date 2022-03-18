@@ -28,7 +28,7 @@ impl Repository {
         self.store.get(&key).map(|r| r.clone())
     }
 
-    fn delete(&mut self, key: String) -> Option<Record> {
+    pub fn delete(&mut self, key: String) -> Option<Record> {
         self.expires.remove(&key);
         self.store.remove(&key)
     }
@@ -48,7 +48,7 @@ impl Repository {
         }
     }
 
-    fn set_expiration(&mut self, key: String, time: Instant) {
+    pub fn set_expiration(&mut self, key: String, time: Instant) {
         if let Some(_) = self.get(key.to_string()) {
             self.expires.insert(key, time);
         };

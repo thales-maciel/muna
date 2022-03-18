@@ -20,6 +20,7 @@ impl From<OperationResult> for RespValueRef {
             OperationResult::Nil => RespValueRef::NullBulkString,
             OperationResult::StringRes(s) => RespValueRef::BulkString(s),
             OperationResult::Error(e) => RespValueRef::Failure(e),
+            OperationResult::Int(i) => RespValueRef::Int(i),
         }
     }
 }

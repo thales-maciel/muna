@@ -2,10 +2,12 @@ use crate::{repository::Repository, request::Request};
 
 mod hash;
 mod string;
+mod key;
 
 use self::{
     hash::{hget, hset},
     string::{get, set},
+    key::{expire},
 };
 
 type OperationHandler = fn(repo: &mut Repository, request: &Request) -> OperationResult;
@@ -15,6 +17,7 @@ pub enum OperationResult {
     Ok,
     StringRes(String),
     Error(String),
+    Int(i64),
     Nil,
 }
 
@@ -67,6 +70,11 @@ static OPERATIONS: &[Operation] = &[
         handler: commands_handler,
         arity: -1,
     },
+    Operation {
+        name: "expire",
+        handler: expire,
+        arity: 3
+    }
 ];
 
 pub fn lookup(name: &str) -> Option<&Operation> {
