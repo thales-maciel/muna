@@ -3,11 +3,13 @@ use crate::{repository::Repository, request::Request};
 mod hash;
 mod string;
 mod key;
+mod server;
 
 use self::{
     hash::{hget, hset},
     string::{get, set},
-    key::{expire},
+    key::expire,
+    server::flush_all
 };
 
 type OperationHandler = fn(repo: &mut Repository, request: &Request) -> OperationResult;
@@ -74,7 +76,12 @@ static OPERATIONS: &[Operation] = &[
         name: "expire",
         handler: expire,
         arity: 3
-    }
+    },
+    Operation {
+        name: "flushall",
+        handler: flush_all,
+        arity: 1
+    },
 ];
 
 pub fn lookup(name: &str) -> Option<&Operation> {

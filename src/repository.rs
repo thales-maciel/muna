@@ -33,7 +33,7 @@ impl Repository {
         self.store.remove(&key)
     }
 
-    fn clear(&mut self) {
+    pub fn clear(&mut self) {
         self.store.clear();
         self.expires.clear();
 
