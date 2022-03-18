@@ -4,10 +4,10 @@ use crate::{repository::Repository, record::{Record, Types}, request::Request};
 
 use super::OperationResult;
 
-pub fn hget(repo: &mut dyn Repository, req: &Request) -> OperationResult {
+pub fn hget(repo: &mut Repository, req: &Request) -> OperationResult {
     let key = &req.arguments()[0];
     let hash_key = &req.arguments()[1];
-    if let Ok(record) = repo.get(key.to_string()) {
+    if let Some(record) = repo.get(key.to_string()) {
         match record.value {
             Types::HashMap(hash) => match hash.get(hash_key) {
                 Some(s) => OperationResult::StringRes(s.to_string()),
@@ -20,13 +20,13 @@ pub fn hget(repo: &mut dyn Repository, req: &Request) -> OperationResult {
     }
 }
 
-pub fn hset(repo: &mut dyn Repository, req: &Request) -> OperationResult {
+pub fn hset(repo: &mut Repository, req: &Request) -> OperationResult {
     if req.arity() % 2 != 0 {
         return OperationResult::Error("wrong number of arguments".to_string());
     };
     let key = &req.arguments()[0];
     let pairs = &req.arguments()[1..];
-    if let Ok(mut record) = repo.get(key.to_string()) {
+    if let Some(mut record) = repo.get(key.to_string()) {
         match record.value {
             Types::HashMap(ref mut hash) => {
                 for pair in pairs.chunks(2) {

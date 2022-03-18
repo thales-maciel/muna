@@ -8,7 +8,7 @@ use thiserror::Error;
 use crate::{
     operations::{lookup, OperationResult},
     protocol::{decode, RESPError, RespValueRef},
-    repository::{MemoryRepository, Repository},
+    repository::Repository,
     request::Request,
 };
 
@@ -26,7 +26,7 @@ pub enum ResponseError {
 
 pub fn handle_connection(mut stream: TcpStream) -> () {
     let mut buffer = [0; 1024];
-    let mut repo = MemoryRepository::new();
+    let mut repo = Repository::new();
 
     while match stream.read(&mut buffer) {
         Ok(_) => {
@@ -51,7 +51,7 @@ pub fn handle_connection(mut stream: TcpStream) -> () {
     } {}
 }
 
-fn handle_request(buffer: &mut [u8], repo: &mut dyn Repository) -> Result<OperationResult, ResponseError> {
+fn handle_request(buffer: &mut [u8], repo: &mut Repository) -> Result<OperationResult, ResponseError> {
     let raw_message = String::from_utf8_lossy(&buffer[..]);
     println!("Message received:\r\n{}", raw_message);
 
