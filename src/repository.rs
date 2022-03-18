@@ -54,3 +54,28 @@ impl Repository {
         };
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::time::Duration;
+
+    use super::*;
+    use crate::record::Types;
+
+    #[test]
+    fn test_clear() {
+        let mut repo = Repository::new();
+        let expires_at = Instant::now() + Duration::from_secs(10);
+        let key = String::from("x");
+        let record = Record { value: Types::String("abc".to_string()) };
+        repo.set(key.clone(), record);
+        repo.set_expiration(key.clone(), expires_at);
+
+        assert_eq!(repo.store.len(), 1);
+        assert_eq!(repo.expires.len(), 1);
+
+        repo.clear();
+        assert_eq!(repo.store.len(), 0);
+        assert_eq!(repo.expires.len(), 0);
+    }
+}
