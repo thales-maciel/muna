@@ -11,14 +11,16 @@ pub fn expire(repo: &mut Repository, req: &Request) -> OperationResult {
     }
     
     let secs = &req.arguments()[1];
-    let secs: i64 = secs.parse().unwrap();
+    let Ok(secs) = secs.parse::<i64>() else {
+        return OperationResult::Error("Value is not an integer or out of range".to_string())
+    };
 
     if !secs.is_positive() {
         repo.delete(key.to_string());
         return OperationResult::Int(1)
     };
 
-    let expires_at = Instant::now() + Duration::from_secs(secs.try_into().unwrap());
+    let expires_at = Instant::now() + Duration::from_secs(secs as u64);
     repo.set_expiration(key.to_string(), expires_at);
     return OperationResult::Int(1)
 }
