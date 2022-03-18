@@ -21,8 +21,6 @@ pub fn set(repo: &mut Repository, req: &Request) -> OperationResult {
         value: Types::String(val.to_string()),
     };
 
-    match repo.set(key.to_string(), record) {
-        Ok(_) => OperationResult::Ok,
-        Err(e) => OperationResult::Error(e),
-    }
+    repo.set(key.to_string(), record);
+    OperationResult::Ok
 }

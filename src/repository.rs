@@ -15,11 +15,8 @@ impl Repository {
         }
     }
 
-    pub fn set(&mut self, key: String, record: Record) -> Result<(), String> {
-        match self.store.insert(key, record.clone()) {
-            Some(_) => Ok(()),
-            None => Ok(()),
-        }
+    pub fn set(&mut self, key: String, record: Record) {
+        self.store.insert(key, record.clone());
     }
 
     pub fn get(&mut self, key: String) -> Option<Record> {
@@ -51,10 +48,9 @@ impl Repository {
         }
     }
 
-    fn set_expiration(&mut self, key: String, time: Instant) -> Result<(), String> {
-        if let Some(record) = self.get(key.to_string()) {
+    fn set_expiration(&mut self, key: String, time: Instant) {
+        if let Some(_) = self.get(key.to_string()) {
             self.expires.insert(key, time);
         };
-        Ok(())
     }
 }
