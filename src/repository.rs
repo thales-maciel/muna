@@ -60,14 +60,14 @@ mod tests {
     use std::time::Duration;
 
     use super::*;
-    use crate::record::Types;
+    use crate::record::Record;
 
     #[test]
     fn test_clear() {
         let mut repo = Repository::new();
         let expires_at = Instant::now() + Duration::from_secs(10);
         let key = String::from("x");
-        let record = Record { value: Types::String("abc".to_string()) };
+        let record = Record::String("abc".to_string());
         repo.set(key.clone(), record);
         repo.set_expiration(key.clone(), expires_at);
 

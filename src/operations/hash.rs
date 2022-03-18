@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{repository::Repository, record::{Record, Types}, request::Request};
+use crate::{repository::Repository, record::{Record}, request::Request};
 
 use super::OperationResult;
 
@@ -8,8 +8,8 @@ pub fn hget(repo: &mut Repository, req: &Request) -> OperationResult {
     let key = &req.arguments()[0];
     let hash_key = &req.arguments()[1];
     if let Some(record) = repo.get(key.to_string()) {
-        match record.value {
-            Types::HashMap(hash) => match hash.get(hash_key) {
+        match record {
+            Record::HashMap(hash) => match hash.get(hash_key) {
                 Some(s) => OperationResult::StringRes(s.to_string()),
                 None => OperationResult::Nil,
             },
@@ -27,8 +27,8 @@ pub fn hset(repo: &mut Repository, req: &Request) -> OperationResult {
     let key = &req.arguments()[0];
     let pairs = &req.arguments()[1..];
     if let Some(mut record) = repo.get(key.to_string()) {
-        match record.value {
-            Types::HashMap(ref mut hash) => {
+        match record {
+            Record::HashMap(ref mut hash) => {
                 for pair in pairs.chunks(2) {
                     hash.insert(pair[0].to_string(), pair[0].to_string());
                 }
@@ -44,9 +44,7 @@ pub fn hset(repo: &mut Repository, req: &Request) -> OperationResult {
         }
         repo.set(
             key.to_string(),
-            Record {
-                value: Types::HashMap(new_set),
-            },
+                Record::HashMap(new_set),
         );
         return OperationResult::Nil;
     }
