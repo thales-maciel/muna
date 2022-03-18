@@ -35,17 +35,24 @@ pub fn hset(repo: &mut Repository, req: &Request) -> OperationResult {
                 repo.set(key.to_string(), record.clone());
                 return OperationResult::Nil;
             }
-            _ => return OperationResult::Error("WrongType".to_string()), // essa linha não deve retornar wrongtype, ela deve apenas setar um novo hash no repo com os valores informados
+            _ => {
+                let record = new_hash_from_pairs(pairs);
+                repo.set(key.to_string(), record);
+                OperationResult::Nil
+            }
         }
     } else {
-        let mut new_set = HashMap::new();
-        for pair in pairs.chunks(2) {
-            new_set.insert(pair[0].to_string(), pair[1].to_string());
-        }
-        repo.set(
-            key.to_string(),
-                Record::HashMap(new_set),
-        );
-        return OperationResult::Nil;
+        let record = new_hash_from_pairs(pairs);
+        repo.set(key.to_string(), record);
+        OperationResult::Nil
     }
+}
+
+fn new_hash_from_pairs(pairs: &[String]) -> Record {
+    let mut new_set = HashMap::new();
+    for pair in pairs.chunks(2) {
+        new_set.insert(pair[0].to_string(), pair[1].to_string());
+    }
+    let record = Record::HashMap(new_set);
+    record
 }
