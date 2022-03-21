@@ -63,6 +63,17 @@ mod tests {
     use crate::record::Record;
 
     #[test]
+    fn test_set() {
+        let mut repo = Repository::new();
+        let key = String::from("x");
+        let record = Record::String("abc".to_string());
+        repo.set(key.clone(), record);
+
+        assert_eq!(repo.store.len(), 1);
+        assert_eq!(repo.store.get(&key).unwrap().to_owned(), Record::String("abc".to_string()));
+    }
+
+    #[test]
     fn test_clear() {
         let mut repo = Repository::new();
         let expires_at = Instant::now() + Duration::from_secs(10);
@@ -75,6 +86,38 @@ mod tests {
         assert_eq!(repo.expires.len(), 1);
 
         repo.clear();
+        assert_eq!(repo.store.len(), 0);
+        assert_eq!(repo.expires.len(), 0);
+    }
+
+    #[test]
+    fn test_delete() {
+        let mut repo = Repository::new();
+        let expires_at = Instant::now() + Duration::from_secs(10);
+        let key = String::from("x");
+        let record = Record::String("abc".to_string());
+        repo.set(key.clone(), record);
+        repo.set_expiration(key.clone(), expires_at);
+
+        assert_eq!(repo.store.len(), 1);
+        assert_eq!(repo.expires.len(), 1);
+
+        repo.delete(key);
+        assert_eq!(repo.store.len(), 0);
+        assert_eq!(repo.expires.len(), 0);
+    }
+
+    #[test]
+    fn test_get_expired() {
+        let mut repo = Repository::new();
+        let expires_at = Instant::now() - Duration::from_secs(10);
+        let key = String::from("x");
+        let record = Record::String("abc".to_string());
+        repo.set(key.clone(), record);
+        repo.set_expiration(key.clone(), expires_at);
+
+        assert_eq!(repo.get(key), None);
+
         assert_eq!(repo.store.len(), 0);
         assert_eq!(repo.expires.len(), 0);
     }

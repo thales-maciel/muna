@@ -89,3 +89,25 @@ pub fn lookup(name: &str) -> Option<&Operation> {
         .iter()
         .find(|o| name.eq_ignore_ascii_case(o.name))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_valid_arity() {
+        assert_eq!(is_valid_arity(2, 2), true);
+        assert_eq!(is_valid_arity(-2, 2), true);
+        assert_eq!(is_valid_arity(-2, 3), true);
+
+        assert_eq!(is_valid_arity(2, 3), false);
+        assert_eq!(is_valid_arity(2, 1), false);
+        assert_eq!(is_valid_arity(-2, 1), false);
+    }
+
+    #[test]
+    fn test_lookup() {
+        assert!(lookup("not implemented operation").is_none());
+        assert!(lookup("get").unwrap().name == "get");
+    }
+}
